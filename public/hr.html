@@ -4,48 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Performance Evaluation — HR Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Cpath d='M50 20 L59 41 L82 41 L63 55 L70 78 L50 64 L30 78 L37 55 L18 41 L41 41 Z' fill='white'/%3E%3C/svg%3E" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }</style>
 </head>
-<body>
-  <div class="shell">
-    <header class="topbar">
-      <span class="topbar-brand">Performance Evaluation · HR</span>
-      <div class="topbar-user">
-        <span id="topbarInfo"></span>
-        <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
-      </div>
-    </header>
-
-    <div class="content" style="max-width:1100px">
-      <p class="section-title">Submission Tracker</p>
-      <p class="section-sub">Track who has submitted feedback for each cycle</p>
-
-      <select class="cycle-select" id="cycleSelect" onchange="loadSubmissions()">
-        <option value="">— Select a cycle —</option>
-      </select>
-
-      <div id="summaryCards" class="hr-summary hidden">
-        <div class="summary-card">
-          <div class="number number-total" id="numTotal">—</div>
-          <div class="label">Total</div>
-        </div>
-        <div class="summary-card">
-          <div class="number number-done" id="numDone">—</div>
-          <div class="label">Submitted</div>
-        </div>
-        <div class="summary-card">
-          <div class="number number-pending" id="numPending">—</div>
-          <div class="label">Pending</div>
-        </div>
+<body class="bg-slate-50 text-slate-900">
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <aside class="w-full md:w-64 md:flex-shrink-0 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-row md:flex-col flex-wrap md:flex-nowrap items-center md:items-stretch gap-3 p-3 md:p-5 sticky top-0 md:h-screen md:overflow-y-auto z-50">
+      <div class="flex items-center gap-2.5 font-extrabold text-sm truncate max-w-[160px] md:max-w-none md:whitespace-normal md:overflow-visible md:text-clip md:leading-snug md:mb-6">
+        <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0">
+          <svg width="15" height="15" viewBox="0 0 100 100" fill="white"><path d="M50 20 L59 41 L82 41 L63 55 L70 78 L50 64 L30 78 L37 55 L18 41 L41 41 Z"/></svg>
+        </span>
+        <span class="bg-gradient-to-br from-indigo-600 to-violet-600 bg-clip-text text-transparent truncate">Performance Evaluation</span>
       </div>
 
-      <div class="progress-line hidden" id="progressLine">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-        <span class="progress-label" id="progressLabel"></span>
-      </div>
+      <nav class="flex md:flex-col gap-1 md:flex-1 order-3 md:order-none basis-full md:basis-auto w-full md:w-auto">
+        <button class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap bg-indigo-50 text-indigo-600">
+          <span>📋</span>Submission Tracker
+        </button>
+      </nav>
 
-      <div id="tableWrap"></div>
-    </div>
+      <div class="flex items-center md:block gap-2 ml-auto md:ml-0 order-2 md:order-none md:border-t md:border-slate-200 md:pt-4 md:mt-2">
+        <div class="hidden md:block mb-3">
+          <div class="font-bold text-sm text-slate-900" id="userName"></div>
+          <div class="text-xs text-slate-500" id="userCompany"></div>
+        </div>
+        <button onclick="logout()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:border-indigo-400 hover:text-indigo-600 transition md:w-full">Logout</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 min-w-0">
+      <div class="p-5 md:p-9 max-w-5xl">
+        <p class="text-xl font-bold tracking-tight mb-1">Submission Tracker</p>
+        <p class="text-slate-500 text-sm mb-5">Track who has submitted feedback for each cycle</p>
+
+        <div class="flex items-center flex-wrap gap-2.5 mb-1">
+          <select id="cycleSelect" onchange="loadSubmissions()"
+            class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm outline-none focus:border-indigo-500 cursor-pointer">
+            <option value="">— Select a cycle —</option>
+          </select>
+          <button id="closeCycleBtn" onclick="closeCycle()" hidden
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:border-indigo-400 hover:text-indigo-600 transition">Close This Cycle</button>
+          <button id="newCycleToggleBtn" onclick="toggleNewCycleForm()"
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:border-indigo-400 hover:text-indigo-600 transition">+ Start New Cycle</button>
+        </div>
+
+        <div id="newCycleForm" class="hidden bg-white border border-slate-200 rounded-xl p-5 shadow-sm mt-4 mb-6 max-w-[420px]">
+          <h3 class="font-bold text-sm mb-3">Start a new feedback cycle</h3>
+          <p class="text-slate-500 text-xs mb-4">
+            Creates a pending review for every manager → direct report pair, and closes any cycle currently open.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-2.5 mb-4">
+            <select id="newCycleMonth" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500"></select>
+            <input type="number" id="newCycleYear" class="w-full sm:w-28 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500" />
+          </div>
+          <div class="flex gap-2.5">
+            <button onclick="startNewCycle()" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25 hover:opacity-90 transition">Create Cycle</button>
+            <button onclick="toggleNewCycleForm(false)" class="px-4 py-2 text-sm font-semibold rounded-lg border border-slate-200 bg-white hover:border-indigo-400 transition">Cancel</button>
+          </div>
+          <p id="newCycleError" class="hidden mt-3 text-sm text-red-600 bg-red-50 rounded-lg py-2 px-3"></p>
+        </div>
+
+        <div id="summaryCards" class="hidden flex-col sm:flex-row gap-3.5 mb-6 flex-wrap">
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-3.5 flex-shrink-0">
+            <div class="ring ring-sm w-[52px] h-[52px]" id="completionRing" style="--pct:0">
+              <span class="ring-value text-xs" id="completionPct">0%</span>
+            </div>
+            <div>
+              <div class="font-bold text-sm">Completion</div>
+              <div class="text-slate-500 text-xs">this cycle</div>
+            </div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex-1 min-w-[130px]">
+            <div class="text-3xl font-extrabold tracking-tight leading-none mb-1 text-slate-900" id="numTotal">—</div>
+            <div class="text-slate-500 text-xs">Total</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex-1 min-w-[130px]">
+            <div class="text-3xl font-extrabold tracking-tight leading-none mb-1 text-green-600" id="numDone">—</div>
+            <div class="text-slate-500 text-xs">Submitted</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex-1 min-w-[130px]">
+            <div class="text-3xl font-extrabold tracking-tight leading-none mb-1 text-red-600" id="numPending">—</div>
+            <div class="text-slate-500 text-xs">Pending</div>
+          </div>
+        </div>
+
+        <div id="tableWrap"></div>
+      </div>
+    </main>
   </div>
 
   <script>
@@ -54,12 +103,13 @@
 
     if (!token || !user || user.role !== 'hr') window.location.href = '/';
 
-    document.getElementById('topbarInfo').innerHTML =
-      `<strong>${user.name}</strong> · ${user.companyName}`;
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userCompany').textContent = user.companyName;
 
-    async function api(path) {
+    async function api(path, opts = {}) {
       const res = await fetch(path, {
-        headers: { Authorization: `Bearer ${token}` },
+        ...opts,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
       });
       if (res.status === 401) { logout(); return null; }
       return res.json();
@@ -70,11 +120,15 @@
       window.location.href = '/';
     }
 
-    async function loadCycles() {
+    let allCycles = [];
+
+    async function loadCycles(selectId) {
       const cycles = await api('/api/hr/cycles');
       if (!cycles) return;
+      allCycles = cycles;
 
       const sel = document.getElementById('cycleSelect');
+      sel.innerHTML = '<option value="">— Select a cycle —</option>';
       cycles.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
@@ -82,13 +136,78 @@
         sel.appendChild(opt);
       });
 
-      // Auto-select the first open cycle
-      const openCycle = cycles.find(c => c.status === 'open');
-      if (openCycle) {
-        sel.value = openCycle.id;
+      const target = selectId
+        ? cycles.find(c => c.id === selectId)
+        : cycles.find(c => c.status === 'open');
+
+      if (target) {
+        sel.value = target.id;
         loadSubmissions();
+      } else {
+        document.getElementById('closeCycleBtn').hidden = true;
       }
     }
+
+    function toggleNewCycleForm(show) {
+      const form = document.getElementById('newCycleForm');
+      const willShow = show === undefined ? form.classList.contains('hidden') : show;
+      form.classList.toggle('hidden', !willShow);
+      document.getElementById('newCycleError').classList.add('hidden');
+
+      if (willShow) {
+        const monthSel = document.getElementById('newCycleMonth');
+        monthSel.innerHTML = [1,2,3,4,5,6,7,8,9,10,11,12]
+          .map(m => `<option value="${m}">${monthName(m)}</option>`).join('');
+
+        // Default to the month after the most recent existing cycle
+        let month = new Date().getMonth() + 1;
+        let year = new Date().getFullYear();
+        if (allCycles.length) {
+          const latest = allCycles[0]; // already ordered year DESC, month DESC
+          month = latest.month === 12 ? 1 : latest.month + 1;
+          year = latest.month === 12 ? latest.year + 1 : latest.year;
+        }
+        monthSel.value = month;
+        document.getElementById('newCycleYear').value = year;
+      }
+    }
+
+    async function startNewCycle() {
+      const month = parseInt(document.getElementById('newCycleMonth').value, 10);
+      const year = parseInt(document.getElementById('newCycleYear').value, 10);
+      const errEl = document.getElementById('newCycleError');
+
+      const res = await api('/api/hr/cycles', {
+        method: 'POST',
+        body: JSON.stringify({ month, year }),
+      });
+
+      if (res && res.success) {
+        toggleNewCycleForm(false);
+        await loadCycles(res.cycleId);
+      } else {
+        errEl.textContent = (res && res.error) || 'Could not start cycle';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function closeCycle() {
+      const cycleId = document.getElementById('cycleSelect').value;
+      if (!cycleId) return;
+      if (!confirm('Close this cycle? Managers will no longer be able to submit feedback for it.')) return;
+
+      const res = await api(`/api/hr/cycles/${cycleId}/close`, { method: 'POST' });
+      if (res && res.success) {
+        await loadCycles(parseInt(cycleId, 10));
+      } else {
+        alert((res && res.error) || 'Could not close cycle');
+      }
+    }
+
+    const STATUS_PILL = {
+      done: 'inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700',
+      pending: 'inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700',
+    };
 
     async function loadSubmissions() {
       const cycleId = document.getElementById('cycleSelect').value;
@@ -97,66 +216,66 @@
       const data = await api(`/api/hr/submissions?cycleId=${cycleId}`);
       if (!data) return;
 
+      document.getElementById('closeCycleBtn').hidden = data.cycle.status !== 'open';
+
       document.getElementById('numTotal').textContent   = data.total;
       document.getElementById('numDone').textContent    = data.done;
       document.getElementById('numPending').textContent = data.pending;
       document.getElementById('summaryCards').classList.remove('hidden');
+      document.getElementById('summaryCards').classList.add('flex');
 
-      const progressLine = document.getElementById('progressLine');
-      if (data.total > 0) {
-        progressLine.classList.remove('hidden');
-        document.getElementById('progressFill').style.width = `${(data.done / data.total) * 100}%`;
-        document.getElementById('progressLabel').textContent =
-          `${Math.round((data.done / data.total) * 100)}% submitted`;
-      } else {
-        progressLine.classList.add('hidden');
-      }
+      const pct = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
+      document.getElementById('completionRing').style.setProperty('--pct', pct);
+      document.getElementById('completionRing').style.setProperty(
+        '--ring-color', pct === 100 ? '#16a34a' : pct > 0 ? '#4f46e5' : '#94a3b8'
+      );
+      document.getElementById('completionPct').textContent = `${pct}%`;
 
       const wrap = document.getElementById('tableWrap');
 
       if (data.submissions.length === 0) {
-        wrap.innerHTML = `<div class="empty"><div class="icon">📭</div><p>No submissions for this cycle.</p></div>`;
+        wrap.innerHTML = `<div class="text-center py-14 px-5 text-slate-500 bg-white border border-dashed border-slate-200 rounded-xl"><div class="text-3xl mb-2">📭</div><p class="text-sm">No submissions for this cycle.</p></div>`;
         return;
       }
 
       wrap.innerHTML = `
-        <div class="table-card">
-        <table class="history-table" style="margin-top:0">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+        <table class="w-full text-sm border-collapse min-w-[560px]">
           <thead>
             <tr>
-              <th>Reviewer</th>
-              <th>Reviewee</th>
-              <th>Status</th>
-              <th>Submitted At</th>
+              <th class="text-left px-4 py-3 bg-slate-50 text-slate-500 font-semibold text-[11px] uppercase tracking-wide border-b border-slate-200">Reviewer</th>
+              <th class="text-left px-4 py-3 bg-slate-50 text-slate-500 font-semibold text-[11px] uppercase tracking-wide border-b border-slate-200">Reviewee</th>
+              <th class="text-left px-4 py-3 bg-slate-50 text-slate-500 font-semibold text-[11px] uppercase tracking-wide border-b border-slate-200">Status</th>
+              <th class="text-left px-4 py-3 bg-slate-50 text-slate-500 font-semibold text-[11px] uppercase tracking-wide border-b border-slate-200">Submitted At</th>
             </tr>
           </thead>
           <tbody>
             ${data.submissions.map(s => `
-              <tr>
-                <td>
-                  <div style="display:flex;align-items:center;gap:10px">
-                    <div class="avatar avatar-sm">${initials(s.reviewer_name)}</div>
+              <tr class="hover:bg-slate-50 transition">
+                <td class="px-4 py-3 border-b border-slate-100 align-top">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-[30px] h-[30px] rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[11px] flex-shrink-0">${initials(s.reviewer_name)}</div>
                     <div>
-                      <strong style="font-size:.88rem">${escHtml(s.reviewer_name)}</strong>
-                      <span style="display:block;font-size:.75rem;color:var(--muted)">${escHtml(s.reviewer_email)}</span>
+                      <strong class="text-[13px] block">${escHtml(s.reviewer_name)}</strong>
+                      <span class="block text-xs text-slate-500">${escHtml(s.reviewer_email)}</span>
                     </div>
                   </div>
                 </td>
-                <td>
-                  <div style="display:flex;align-items:center;gap:10px">
-                    <div class="avatar avatar-sm">${initials(s.reviewee_name)}</div>
+                <td class="px-4 py-3 border-b border-slate-100 align-top">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-[30px] h-[30px] rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[11px] flex-shrink-0">${initials(s.reviewee_name)}</div>
                     <div>
-                      <strong style="font-size:.88rem">${escHtml(s.reviewee_name)}</strong>
-                      <span style="display:block;font-size:.75rem;color:var(--muted)">${escHtml(s.reviewee_email)}</span>
+                      <strong class="text-[13px] block">${escHtml(s.reviewee_name)}</strong>
+                      <span class="block text-xs text-slate-500">${escHtml(s.reviewee_email)}</span>
                     </div>
                   </div>
                 </td>
-                <td>
-                  <span class="status-pill ${s.submitted_at ? 'pill-done' : 'pill-pending'}">
+                <td class="px-4 py-3 border-b border-slate-100 align-top">
+                  <span class="${s.submitted_at ? STATUS_PILL.done : STATUS_PILL.pending}">
                     ${s.submitted_at ? 'Submitted' : 'Pending'}
                   </span>
                 </td>
-                <td style="color:var(--muted);font-size:.8rem">
+                <td class="px-4 py-3 border-b border-slate-100 align-top text-slate-500 text-xs">
                   ${s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—'}
                 </td>
               </tr>

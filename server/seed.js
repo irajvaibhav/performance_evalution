@@ -91,11 +91,6 @@ function seedAshoka() {
 
   const parameters = db.prepare("SELECT id FROM feedback_parameters").all();
 
-  // July 2026 — closed cycle with scores already submitted
-  const { lastInsertRowid: julyCycleId } = db
-    .prepare("INSERT INTO feedback_cycles (company_id, month, year, status) VALUES (?, ?, ?, ?)")
-    .run(companyId, 7, 2026, "closed");
-
   const insertSubmission = db.prepare(`
     INSERT INTO feedback_submissions (cycle_id, reviewer_id, reviewee_id, submitted_at)
     VALUES (@cycle_id, @reviewer_id, @reviewee_id, @submitted_at)
@@ -106,7 +101,7 @@ function seedAshoka() {
     VALUES (@submission_id, @parameter_id, @score, @comment)
   `);
 
-  function createFilledSubmission(cycleId, reviewerId, revieweeId, scores) {
+  function createFilledSubmission(cycleId, reviewerId, revieweeId, scores, monthLabel) {
     const { lastInsertRowid: subId } = insertSubmission.run({
       cycle_id: cycleId, reviewer_id: reviewerId,
       reviewee_id: revieweeId, submitted_at: new Date().toISOString(),
@@ -114,17 +109,31 @@ function seedAshoka() {
     parameters.forEach((param, i) => {
       insertScore.run({
         submission_id: subId, parameter_id: param.id,
-        score: scores[i], comment: `Good performance on this parameter in July.`,
+        score: scores[i], comment: `Good performance on this parameter in ${monthLabel}.`,
       });
     });
   }
 
-  // Priya reviews all 6 in July
-  reportIds.forEach((rid) => createFilledSubmission(julyCycleId, priyaId, rid, [4, 3, 5, 4, 4]));
-  // Rohan reviews Priya in July
-  createFilledSubmission(julyCycleId, rohanId, priyaId, [5, 4, 5, 3, 4]);
-  // COO reviews Rohan in July
-  createFilledSubmission(julyCycleId, cooId, rohanId, [4, 4, 4, 4, 5]);
+  // May, June, July 2026 — three closed cycles with scores already submitted,
+  // so employees have a few months of history to see a trend across.
+  const historicalMonths = [
+    { month: 5, label: "May", priya: [3, 3, 4, 3, 3], rohan: [4, 3, 4, 3, 3], coo: [3, 3, 3, 4, 4] },
+    { month: 6, label: "June", priya: [4, 3, 4, 4, 3], rohan: [4, 4, 4, 4, 4], coo: [4, 4, 3, 4, 4] },
+    { month: 7, label: "July", priya: [4, 3, 5, 4, 4], rohan: [5, 4, 5, 3, 4], coo: [4, 4, 4, 4, 5] },
+  ];
+
+  historicalMonths.forEach(({ month, label, priya, rohan, coo }) => {
+    const { lastInsertRowid: cycleId } = db
+      .prepare("INSERT INTO feedback_cycles (company_id, month, year, status) VALUES (?, ?, ?, ?)")
+      .run(companyId, month, 2026, "closed");
+
+    // Priya reviews all 6 reports
+    reportIds.forEach((rid) => createFilledSubmission(cycleId, priyaId, rid, priya, label));
+    // Rohan reviews Priya
+    createFilledSubmission(cycleId, rohanId, priyaId, rohan, label);
+    // COO reviews Rohan
+    createFilledSubmission(cycleId, cooId, rohanId, coo, label);
+  });
 
   // August 2026 — open cycle, all submissions pending
   const { lastInsertRowid: augCycleId } = db

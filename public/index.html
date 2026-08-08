@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performance Evaluation — Login</title>
+  <meta name="description" content="Monthly performance feedback tool for teams" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1>Performance Evaluation</h1>
+      <p class="subtitle">Monthly performance feedback, simplified.</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@company.com" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary" id="loginBtn">Sign in</button>
+        <p class="error-msg hidden" id="errorMsg"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // If already logged in, skip to the right page
+    const stored = localStorage.getItem('perf_user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      window.location.href = user.role === 'hr' ? '/hr.html' : '/employee.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('errorMsg');
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      err.classList.add('hidden');
+
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        err.textContent = data.error || 'Login failed';
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+        return;
+      }
+
+      localStorage.setItem('perf_token', data.token);
+      localStorage.setItem('perf_user', JSON.stringify(data.user));
+
+      window.location.href = data.user.role === 'hr' ? '/hr.html' : '/employee.html';
+    });
+  </script>
+</body>
+</html>

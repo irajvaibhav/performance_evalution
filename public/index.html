@@ -5,25 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Performance Evaluation — Login</title>
   <meta name="description" content="Monthly performance feedback tool for teams" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Cpath d='M50 20 L59 41 L82 41 L63 55 L70 78 L50 64 L30 78 L37 55 L18 41 L41 41 Z' fill='white'/%3E%3C/svg%3E" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
+  <style>body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
-  <div class="auth-page">
-    <div class="auth-card">
-      <h1>Performance Evaluation</h1>
-      <p class="subtitle">Monthly performance feedback, simplified.</p>
+<body class="min-h-screen bg-slate-50">
+  <div class="min-h-screen flex items-center justify-center p-5 bg-[radial-gradient(ellipse_700px_500px_at_15%_0%,#eef2ff_0%,transparent_60%),radial-gradient(ellipse_700px_500px_at_100%_100%,#eff6ff_0%,transparent_55%)]">
+    <div class="w-full max-w-[420px] bg-white border border-slate-200 rounded-[20px] shadow-xl p-10">
+      <div class="w-[52px] h-[52px] rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center mb-4 shadow-lg shadow-indigo-600/30">
+        <svg width="26" height="26" viewBox="0 0 100 100" fill="white"><path d="M50 20 L59 41 L82 41 L63 55 L70 78 L50 64 L30 78 L37 55 L18 41 L41 41 Z"/></svg>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight mb-1 bg-gradient-to-br from-indigo-600 to-violet-600 bg-clip-text text-transparent">Performance Evaluation</h1>
+      <p class="text-slate-500 text-sm mb-8">Monthly performance feedback, simplified.</p>
 
       <form id="loginForm">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="you@company.com" required />
+        <div class="mb-4">
+          <label for="email" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Email</label>
+          <input type="email" id="email" placeholder="you@company.com" required
+            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:bg-white transition" />
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" placeholder="••••••••" required />
+        <div class="mb-5">
+          <label for="password" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required
+            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:bg-white transition" />
         </div>
-        <button type="submit" class="btn btn-primary" id="loginBtn">Sign in</button>
-        <p class="error-msg hidden" id="errorMsg"></p>
+        <button type="submit" id="loginBtn"
+          class="w-full bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-semibold text-sm rounded-lg py-2.5 shadow-lg shadow-indigo-600/25 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition">Sign in</button>
+        <p id="errorMsg" class="hidden mt-3 text-center text-sm text-red-600 bg-red-50 rounded-lg py-2 px-3"></p>
       </form>
     </div>
   </div>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performance Evaluation — HR Dashboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <span class="topbar-brand">Performance Evaluation · HR</span>
+      <div class="topbar-user">
+        <span id="topbarInfo"></span>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="content" style="max-width:1100px">
+      <p class="section-title">Submission Tracker</p>
+      <p class="section-sub">Track who has submitted feedback for each cycle</p>
+
+      <select class="cycle-select" id="cycleSelect" onchange="loadSubmissions()">
+        <option value="">— Select a cycle —</option>
+      </select>
+
+      <div id="summaryCards" class="hr-summary hidden">
+        <div class="summary-card">
+          <div class="number number-total" id="numTotal">—</div>
+          <div class="label">Total</div>
+        </div>
+        <div class="summary-card">
+          <div class="number number-done" id="numDone">—</div>
+          <div class="label">Submitted</div>
+        </div>
+        <div class="summary-card">
+          <div class="number number-pending" id="numPending">—</div>
+          <div class="label">Pending</div>
+        </div>
+      </div>
+
+      <div class="progress-line hidden" id="progressLine">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <span class="progress-label" id="progressLabel"></span>
+      </div>
+
+      <div id="tableWrap"></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('perf_token');
+    const user  = JSON.parse(localStorage.getItem('perf_user') || 'null');
+
+    if (!token || !user || user.role !== 'hr') window.location.href = '/';
+
+    document.getElementById('topbarInfo').innerHTML =
+      `<strong>${user.name}</strong> · ${user.companyName}`;
+
+    async function api(path) {
+      const res = await fetch(path, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { logout(); return null; }
+      return res.json();
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/';
+    }
+
+    async function loadCycles() {
+      const cycles = await api('/api/hr/cycles');
+      if (!cycles) return;
+
+      const sel = document.getElementById('cycleSelect');
+      cycles.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${monthName(c.month)} ${c.year} (${c.status})`;
+        sel.appendChild(opt);
+      });
+
+      // Auto-select the first open cycle
+      const openCycle = cycles.find(c => c.status === 'open');
+      if (openCycle) {
+        sel.value = openCycle.id;
+        loadSubmissions();
+      }
+    }
+
+    async function loadSubmissions() {
+      const cycleId = document.getElementById('cycleSelect').value;
+      if (!cycleId) return;
+
+      const data = await api(`/api/hr/submissions?cycleId=${cycleId}`);
+      if (!data) return;
+
+      document.getElementById('numTotal').textContent   = data.total;
+      document.getElementById('numDone').textContent    = data.done;
+      document.getElementById('numPending').textContent = data.pending;
+      document.getElementById('summaryCards').classList.remove('hidden');
+
+      const progressLine = document.getElementById('progressLine');
+      if (data.total > 0) {
+        progressLine.classList.remove('hidden');
+        document.getElementById('progressFill').style.width = `${(data.done / data.total) * 100}%`;
+        document.getElementById('progressLabel').textContent =
+          `${Math.round((data.done / data.total) * 100)}% submitted`;
+      } else {
+        progressLine.classList.add('hidden');
+      }
+
+      const wrap = document.getElementById('tableWrap');
+
+      if (data.submissions.length === 0) {
+        wrap.innerHTML = `<div class="empty"><div class="icon">📭</div><p>No submissions for this cycle.</p></div>`;
+        return;
+      }
+
+      wrap.innerHTML = `
+        <div class="table-card">
+        <table class="history-table" style="margin-top:0">
+          <thead>
+            <tr>
+              <th>Reviewer</th>
+              <th>Reviewee</th>
+              <th>Status</th>
+              <th>Submitted At</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.submissions.map(s => `
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div class="avatar avatar-sm">${initials(s.reviewer_name)}</div>
+                    <div>
+                      <strong style="font-size:.88rem">${escHtml(s.reviewer_name)}</strong>
+                      <span style="display:block;font-size:.75rem;color:var(--muted)">${escHtml(s.reviewer_email)}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div class="avatar avatar-sm">${initials(s.reviewee_name)}</div>
+                    <div>
+                      <strong style="font-size:.88rem">${escHtml(s.reviewee_name)}</strong>
+                      <span style="display:block;font-size:.75rem;color:var(--muted)">${escHtml(s.reviewee_email)}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-pill ${s.submitted_at ? 'pill-done' : 'pill-pending'}">
+                    ${s.submitted_at ? 'Submitted' : 'Pending'}
+                  </span>
+                </td>
+                <td style="color:var(--muted);font-size:.8rem">
+                  ${s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function initials(name) {
+      return String(name).trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function monthName(m) {
+      return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1];
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    loadCycles();
+  </script>
+</body>
+</html>

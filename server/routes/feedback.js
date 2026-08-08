@@ -67,12 +67,18 @@ router.post("/submit/:submissionId", (req, res) => {
     .map((param) => param.id);
 
   const submission = db
-    .prepare("SELECT * FROM feedback_submissions WHERE id = ?")
+    .prepare(`
+      SELECT fs.*, fc.status AS cycle_status
+      FROM feedback_submissions fs
+      JOIN feedback_cycles fc ON fc.id = fs.cycle_id
+      WHERE fs.id = ?
+    `)
     .get(submissionId);
 
   if (!submission) return res.status(404).json({ error: "Submission not found" });
   if (submission.reviewer_id !== req.user.id) return res.status(403).json({ error: "Not your submission" });
   if (submission.submitted_at) return res.status(400).json({ error: "Already submitted" });
+  if (submission.cycle_status !== "open") return res.status(400).json({ error: "This feedback cycle is closed" });
 
   if (!Array.isArray(scores) || scores.length !== parameterIds.length)
     return res.status(400).json({ error: "Provide scores for all 5 parameters" });

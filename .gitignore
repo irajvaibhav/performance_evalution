@@ -1,0 +1,6 @@
+node_modules/
+perf_eval.db
+perf_eval.db-shm
+perf_eval.db-wal
+.DS_Store
+Thumbs.db
